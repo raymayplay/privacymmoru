@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081018">
+  <meta name="description" content="A local-only Aoba Video demo that automatically blocks exact duplicate video uploads.">
+  <title>Aoba Video — Duplicate Upload Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #081018;
+      --panel: rgba(17, 29, 39, .88);
+      --panel-soft: rgba(23, 39, 49, .72);
+      --line: rgba(172, 202, 211, .14);
+      --text: #edf7f5;
+      --muted: #95aaa9;
+      --teal: #68e0c0;
+      --blue: #82bbff;
+      --amber: #ffca75;
+      --rose: #ff8492;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(900px 580px at 84% -20%, rgba(54, 162, 167, .19), transparent 70%),
+        radial-gradient(850px 560px at -10% 18%, rgba(73, 117, 203, .14), transparent 68%),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .55; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+    .shell { width: min(1160px, calc(100% - 36px)); margin: 0 auto; padding: 24px 0 64px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(104, 224, 192, .4);
+      border-radius: 14px; color: var(--teal); font-size: 20px; background: rgba(104, 224, 192, .09);
+      box-shadow: 0 0 30px rgba(104, 224, 192, .09);
+    }
+    .brand-name { font-size: 15px; font-weight: 750; letter-spacing: .11em; }
+    .brand-sub { color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .language, .ghost {
+      border: 1px solid var(--line); border-radius: 11px; padding: 9px 12px; background: rgba(255, 255, 255, .035);
+      color: var(--text); font-weight: 650;
+    }
+    .language:hover, .ghost:hover { border-color: rgba(104, 224, 192, .45); }
+    .license-pill {
+      display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 202, 117, .35);
+      border-radius: 99px; padding: 8px 12px; color: var(--amber); background: rgba(255, 202, 117, .07);
+      font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); gap: 24px; align-items: end; padding: 70px 0 34px; }
+    .eyebrow { color: var(--teal); font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { max-width: 730px; margin: 12px 0; font-size: clamp(38px, 6vw, 68px); line-height: 1.03; letter-spacing: -.055em; }
+    .hero p { max-width: 660px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+    .status-card, .card {
+      border: 1px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+    .status-card { padding: 18px; }
+    .status-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .status-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .status-state { display: flex; align-items: center; gap: 7px; color: var(--amber); font-size: 12px; font-weight: 750; }
+    .status-copy { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+    .banner {
+      display: flex; align-items: flex-start; gap: 12px; margin: 0 0 18px; border: 1px solid rgba(255, 202, 117, .24);
+      border-radius: 14px; padding: 13px 15px; color: #f6dfb9; background: rgba(255, 202, 117, .055); font-size: 13px;
+    }
+    .banner strong { color: var(--amber); }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 24px; }
+    .stat { padding: 17px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel-soft); }
+    .stat-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .stat-value { margin-top: 6px; font-size: 28px; font-weight: 750; letter-spacing: -.04em; }
+    .stat-value.good { color: var(--teal); }.stat-value.warn { color: var(--amber); }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+    .card { padding: 22px; }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    h2 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
+    h3 { margin: 0; font-size: 15px; }
+    .sub { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .step {
+      display: inline-grid; width: 26px; height: 26px; place-items: center; border-radius: 9px;
+      color: var(--teal); background: rgba(104, 224, 192, .1); font-size: 12px; font-weight: 800; flex: none;
+    }
+    .section-heading { display: flex; align-items: center; gap: 10px; }
+    .license-box { margin-top: 19px; border: 1px solid rgba(104, 224, 192, .2); border-radius: 14px; background: rgba(104, 224, 192, .045); }
+    .license-box summary { padding: 13px 14px; cursor: pointer; color: var(--teal); font-weight: 750; }
+    .license-content { padding: 0 14px 14px; }
+    textarea {
+      width: 100%; min-height: 94px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px;
+      background: rgba(2, 9, 15, .65); color: var(--text); font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    .button-row { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 11px; }
+    .primary, .secondary, .danger {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent;
+      border-radius: 11px; padding: 10px 14px; font-size: 13px; font-weight: 750; transition: transform .16s, filter .16s;
+    }
+    .primary { color: #06221e; background: linear-gradient(135deg, var(--teal), #9cebd2); }
+    .secondary { border-color: var(--line); color: var(--text); background: rgba(255, 255, 255, .045); }
+    .danger { border-color: rgba(255, 132, 146, .3); color: var(--rose); background: rgba(255, 132, 146, .06); }
+    .primary:hover, .secondary:hover, .danger:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .helper { margin: 11px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .helper strong { color: var(--text); }
+    .feedback { margin-top: 11px; border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.6; }
+    .feedback:empty { display: none; }
+    .feedback.ok { border: 1px solid rgba(104, 224, 192, .2); color: var(--teal); background: rgba(104, 224, 192, .06); }
+    .feedback.warn { border: 1px solid rgba(255, 202, 117, .24); color: var(--amber); background: rgba(255, 202, 117, .06); }
+    .feedback.error { border: 1px solid rgba(255, 132, 146, .25); color: var(--rose); background: rgba(255, 132, 146, .06); }
+    .fingerprint-list { display: grid; gap: 8px; margin-top: 12px; }
+    .fingerprint-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--line); border-radius: 11px; padding: 10px 11px; }
+    .fingerprint-meta { min-width: 0; }
+    .fingerprint-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; }
+    .fingerprint-hash { margin-top: 3px; color: var(--muted); font: 10px ui-monospace, monospace; }
+    .remove-fingerprint { border: 0; padding: 6px; color: var(--muted); background: transparent; font-size: 11px; }
+    .dropzone {
+      display: grid; min-height: 188px; place-items: center; margin-top: 18px; border: 1px dashed rgba(104, 224, 192, .48);
+      border-radius: 16px; padding: 22px; text-align: center; cursor: pointer; background: linear-gradient(180deg, rgba(104, 224, 192, .07), transparent);
+      transition: border-color .18s, background .18s, box-shadow .18s;
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--teal); background: rgba(104, 224, 192, .09); box-shadow: 0 0 26px rgba(104, 224, 192, .08); }
+    .drop-icon { display: grid; width: 44px; height: 44px; place-items: center; margin: 0 auto 10px; border: 1px solid rgba(104, 224, 192, .26); border-radius: 14px; color: var(--teal); font-size: 22px; }
+    .drop-title { font-weight: 750; }.drop-hint { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    input[type=file] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+    .consent { display: flex; align-items: flex-start; gap: 10px; margin-top: 13px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .consent input { width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--teal); flex: none; }
+    .progress-wrap { margin-top: 13px; }
+    progress { width: 100%; height: 7px; accent-color: var(--teal); }
+    .progress-text { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .upload-list { display: grid; gap: 10px; margin-top: 14px; }
+    .empty { border: 1px dashed var(--line); border-radius: 13px; padding: 22px 14px; color: var(--muted); text-align: center; font-size: 13px; }
+    .upload-row { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 13px; border: 1px solid var(--line); border-radius: 14px; padding: 11px; background: rgba(255, 255, 255, .025); }
+    .preview { display: grid; width: 96px; min-height: 74px; place-items: center; overflow: hidden; border-radius: 10px; background: #020609; color: var(--muted); font-size: 22px; }
+    .preview video { width: 100%; height: 100%; max-height: 100px; object-fit: cover; }
+    .upload-main { min-width: 0; }
+    .upload-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .upload-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 750; }
+    .upload-detail { margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 99px; padding: 4px 7px; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+    .badge.live { border-color: rgba(104, 224, 192, .26); color: var(--teal); }.badge.blocked { border-color: rgba(255, 132, 146, .28); color: var(--rose); }
+    .badge.review { border-color: rgba(255, 202, 117, .28); color: var(--amber); }
+    .upload-result { margin-top: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .partner-flow { margin-top: 22px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(2, 9, 15, .26); }
+    .flow-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .flow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .flow-step { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+    .flow-step b { display: block; margin-bottom: 5px; color: var(--teal); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    .flow-step span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+    footer { margin-top: 24px; color: var(--muted); font-size: 11px; text-align: center; }
+    footer strong { color: var(--amber); }
+    @media (max-width: 820px) {
+      .hero { grid-template-columns: 1fr; padding-top: 48px; }
+      .status-card { max-width: none; }
+      .layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 24px, 1160px); padding-top: 14px; }
+      .topbar { align-items: flex-start; flex-wrap: wrap; }
+      .top-actions { width: 100%; justify-content: space-between; }
+      .hero { padding-top: 38px; }
+      .stats { gap: 7px; }
+      .stat { padding: 12px; }.stat-value { font-size: 23px; }.stat-label { font-size: 9px; }
+      .card { padding: 17px; }.flow-grid { grid-template-columns: 1fr; }
+      .upload-row { grid-template-columns: 72px minmax(0, 1fr); }.preview { width: 72px; }
+      .license-pill { font-size: 9px; padding: 7px 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">A</div>
+        <div>
+          <div class="brand-name">AOBA VIDEO</div>
+          <div class="brand-sub" data-i="partnerConsole"></div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span class="license-pill"><span class="dot" aria-hidden="true"></span><span data-i="simulated"></span></span>
+        <button class="language" id="language" type="button" aria-label="Switch language">日本語</button>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="heroTitle">
+      <div>
+        <div class="eyebrow" data-i="eyebrow"></div>
+        <h1 id="heroTitle" data-i="heroTitle"></h1>
+        <p data-i="heroCopy"></p>
+      </div>
+      <aside class="status-card" aria-label="Partner connection status">
+        <div class="status-top">
+          <span class="status-label" data-i="checkStatus"></span>
+          <span class="status-state"><span class="dot" aria-hidden="true"></span><span data-i="automatic"></span></span>
+        </div>
+        <p class="status-copy" data-i="checkStatusCopy"></p>
+      </aside>
+    </section>
+
+    <div class="banner" role="note">
+      <span aria-hidden="true">ⓘ</span>
+      <div><strong data-i="demoLabel"></strong> <span data-i="demoNotice"></span></div>
+    </div>
+
+    <section class="stats" aria-label="Session summary">
+      <div class="stat"><div class="stat-label" data-i="checkedLabel"></div><div class="stat-value" id="countChecked">0</div></div>
+      <div class="stat"><div class="stat-label" data-i="blockedLabel"></div><div class="stat-value good" id="countBlocked">0</div></div>
+      <div class="stat"><div class="stat-label" data-i="knownLabel"></div><div class="stat-value warn" id="knownCount">0</div></div>
+    </section>
+
+    <div class="layout">
+      <section class="card" aria-labelledby="uploadHeading">
+        <div class="card-head">
+          <div>
+            <div class="section-heading"><span class="step">01</span><h2 id="uploadHeading" data-i="uploadHeading"></h2></div>
+            <p class="sub" data-i="uploadCopy"></p>
+          </div>
+        </div>
+        <label class="dropzone" id="dropzone" for="videoFile">
+          <span>
+            <span class="drop-icon" aria-hidden="true">↑</span>
+            <span class="drop-title" id="dropTitle" data-i="dropTitle"></span>
+            <span class="drop-hint" id="dropHint" data-i="dropHint"></span>
+          </span>
+        </label>
+        <input id="videoFile" type="file" accept="video/mp4,video/webm,video/quicktime,video/*">
+        <label class="consent">
+          <input id="adultConsent" type="checkbox">
+          <span data-i="adultConsent"></span>
+        </label>
+        <div class="button-row">
+          <button class="primary" id="checkUpload" type="button" disabled><span aria-hidden="true">◈</span><span data-i="checkUpload"></span></button>
+          <button class="secondary" id="clearUploads" type="button"><span data-i="clearSession"></span></button>
+        </div>
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <progress id="progress" max="100" value="0"></progress>
+          <div class="progress-text" id="progressText" role="status"></div>
+        </div>
+        <div class="feedback" id="uploadFeedback" role="status" aria-live="polite"></div>
+
+        <div class="partner-flow">
+          <div class="flow-title"><h3 data-i="howItWorks"></h3></div>
+          <div class="flow-grid">
+            <div class="flow-step"><b data-i="stepLocal"></b><span data-i="stepLocalCopy"></span></div>
+            <div class="flow-step"><b data-i="stepCheck"></b><span data-i="stepCheckCopy"></span></div>
+            <div class="flow-step"><b data-i="stepAction"></b><span data-i="stepActionCopy"></span></div>
+          </div>
+        </div>
+
+        <div class="partner-flow">
+          <div class="flow-title">
+            <h3 data-i="uploadQueue"></h3>
+            <span class="badge live"><span class="dot" aria-hidden="true"></span><span data-i="localOnly"></span></span>
+          </div>
+          <div class="upload-list" id="uploadList"></div>
+        </div>
+      </section>
+    </div>
+
+    <footer><strong data-i="footerDemo"></strong> <span data-i="footerCopy"></span></footer>
+  </main>
+
+  <script>
+    "use strict";
+    const $ = id => document.getElementById(id);
+    const STORAGE_KEY = "aoba.video.exact-hash-history.v1";
+    const MAX_FILE_BYTES = 100 * 1024 * 1024;
+    const MAX_HASHES = 500;
+    const knownHashes = new Set();
+    const uploads = [];
+    let lang = "en";
+    let processing = false;
+    let historyValid = true;
+
+    const COPY = {
+      en: {
+        partnerConsole: "VIDEO SAFETY · AUTOMATIC CHECK", simulated: "DEMO",
+        eyebrow: "AUTOMATIC DUPLICATE DETECTION", heroTitle: "Check every video before it goes live.",
+        heroCopy: "Aoba calculates the video's SHA-256 hash automatically. If that exact video has already gone live in this demo, the new upload is blocked.",
+        checkStatus: "UPLOAD CHECK", automatic: "AUTOMATIC", checkStatusCopy: "Exact file hashes are checked locally before the simulated publish step.",
+        demoLabel: "LOCAL DEMO.", demoNotice: "Videos are processed only in this browser. Nothing is uploaded to a server or published on a real platform. The duplicate history stays in this browser. Use harmless test clips only.",
+        checkedLabel: "CHECKED THIS SESSION", blockedLabel: "DUPLICATES BLOCKED", knownLabel: "KNOWN VIDEO HASHES",
+        uploadHeading: "Upload to Aoba Video", uploadCopy: "Choose a harmless test video. To test automatic blocking, submit the same file twice: the first is allowed in the demo and the second is blocked. No separate service or fingerprint import is needed.",
+        dropTitle: "Choose a harmless test video", dropHint: "MP4, WebM, or another browser-playable format · max 100 MB",
+        adultConsent: "I am an adult and have permission to process this harmless test clip. It contains no intimate content and no one who was under 18 when recorded.",
+        checkUpload: "Check & simulate upload", clearSession: "Reset demo history",
+        uploadQueue: "Upload activity", localOnly: "LOCAL ONLY", noUploads: "No upload activity yet. Choose a harmless test clip to try it.",
+        howItWorks: "How the automatic check works", stepLocal: "01 · HASH", stepLocalCopy: "Aoba calculates SHA-256 for the selected video in this browser.",
+        stepCheck: "02 · COMPARE", stepCheckCopy: "It checks the hash against videos already allowed in this demo. Edited or re-encoded copies may have a different hash.",
+        stepAction: "03 · BLOCK OR ALLOW", stepActionCopy: "A matching hash is blocked before the simulated publish. A new hash is allowed and saved for future checks.",
+        footerDemo: "DEMO ONLY — NOT A LIVE PLATFORM.", footerCopy: "Exact-hash duplicate detection runs in this browser; no video is sent to a server.",
+        fileTooLarge: "Choose a video under 100 MB.",
+        consentRequired: "Confirm the adult / harmless test-clip statement before processing a video.",
+        chooseVideo: "Choose a video first.", processing: "Calculating video hash…",
+        processingLabel: "Hashing on this device", checking: "Checking for an exact duplicate…",
+        exactBlocked: "BLOCKED — this exact video hash already exists in Aoba's local demo history. It was not allowed to go live.",
+        published: "ALLOWED IN DEMO — no exact duplicate was found. This clip is now in the local history, so another identical upload will be blocked.",
+        storageUnavailable: "Could not save the duplicate history in this browser. Upload blocked to avoid an unreliable check.",
+        storageCorrupt: "The saved duplicate history is invalid. Reset demo history to start again.",
+        checked: "Checked", exact: "Exact duplicate · blocked", allowed: "Allowed in demo", live: "Allowed in demo",
+      },
+      ja: {
+        partnerConsole: "動画安全対策 · 自動チェック", simulated: "デモ",
+        eyebrow: "自動重複検出", heroTitle: "公開前に、すべての動画をチェック。",
+        heroCopy: "Aobaが動画のSHA-256ハッシュを自動計算します。このデモですでに公開許可された動画と完全一致した場合、新しいアップロードをブロックします。",
+        checkStatus: "アップロードチェック", automatic: "自動", checkStatusCopy: "模擬公開の前に、ファイルの完全一致ハッシュを端末内で確認します。",
+        demoLabel: "ローカルデモ。",
+        demoNotice: "動画はこのブラウザー内だけで処理します。サーバーに送信されず、実際のサイトにも公開されません。重複履歴はこのブラウザーに保存されます。無害なテスト動画だけを使ってください。",
+        checkedLabel: "このセッションの確認", blockedLabel: "重複ブロック", knownLabel: "登録済みハッシュ",
+        uploadHeading: "Aoba Videoにアップロード", uploadCopy: "無害なテスト動画を選択してください。同じファイルを2回送信して自動ブロックをテストできます。1回目はデモで許可され、2回目はブロックされます。別サービスや指紋の取り込みは不要です。",
+        dropTitle: "無害なテスト動画を選択", dropHint: "MP4、WebMなどブラウザーで再生できる形式 · 最大100MB",
+        adultConsent: "私は成人で、この無害なテスト動画を処理する許可を得ています。親密な内容や、撮影時に18歳未満だった人は含まれていません。",
+        checkUpload: "確認して模擬アップロード", clearSession: "デモ履歴をリセット",
+        uploadQueue: "アップロード履歴", localOnly: "端末内のみ", noUploads: "履歴はありません。無害なテスト動画を選択して試してください。",
+        howItWorks: "自動チェックの仕組み", stepLocal: "01 · ハッシュ", stepLocalCopy: "このブラウザー内で選択した動画のSHA-256を計算します。",
+        stepCheck: "02 · 比較", stepCheckCopy: "このデモで公開許可された動画のハッシュと照合します。編集・再エンコードされた動画は別のハッシュになる場合があります。",
+        stepAction: "03 · ブロックまたは許可", stepActionCopy: "一致したハッシュは模擬公開前にブロック。新しいハッシュは許可され、次回のために保存されます。",
+        footerDemo: "デモのみ — 実際の配信サイトではありません。", footerCopy: "完全一致検出はこのブラウザー内で実行し、動画はサーバーに送信されません。",
+        fileTooLarge: "100MB未満の動画を選択してください。",
+        consentRequired: "動画を処理する前に、成人・無害なテスト動画の確認欄にチェックしてください。",
+        chooseVideo: "先に動画を選択してください。", processing: "動画のハッシュを計算中…",
+        processingLabel: "この端末でハッシュ計算中", checking: "完全一致の重複を確認中…",
+        exactBlocked: "ブロック — この動画と完全一致するハッシュがAobaのデモ履歴にあります。公開は許可されませんでした。",
+        published: "デモで許可 — 完全一致の重複はありません。この動画は端末内履歴に保存され、同じ動画の次回アップロードはブロックされます。",
+        storageUnavailable: "このブラウザーに重複履歴を保存できません。安全な照合ができないため、アップロードをブロックしました。",
+        storageCorrupt: "保存された重複履歴が無効です。デモ履歴をリセットしてください。",
+        historyFull: "デモ履歴がいっぱいです。続けて試すには履歴をリセットしてください。",
+        checked: "確認済み", exact: "完全一致 · ブロック", allowed: "デモで許可", live: "デモで許可",
+      },
+    };
+
+    function text(key) { return COPY[lang][key] ?? COPY.en[key] ?? key; }
+    function setFeedback(id, message, type = "ok") {
+      const node = $(id);
+      node.textContent = message;
+      node.className = `feedback${message ? ` ${type}` : ""}`;
+    }
+    function updateCounts() {
+      $("countChecked").textContent = String(uploads.length);
+      $("countBlocked").textContent = String(uploads.filter(item => item.status === "blocked").length);
+      $("knownCount").textContent = String(knownHashes.size);
+    }
+    function renderUploads() {
+      const list = $("uploadList");
+      list.replaceChildren();
+      updateCounts();
+      if (!uploads.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = text("noUploads");
+        list.append(empty);
+        return;
+      }
+      uploads.forEach(item => {
+        const row = document.createElement("article");
+        row.className = "upload-row";
+        const preview = document.createElement("div");
+        preview.className = "preview";
+        if (item.url && item.status !== "blocked") {
+          const video = document.createElement("video");
+          video.controls = true;
+          video.preload = "metadata";
+          video.src = item.url;
+          video.setAttribute("aria-label", item.name);
+          preview.append(video);
+        } else {
+          preview.textContent = item.status === "blocked" ? "⛨" : "▶";
+        }
+        const main = document.createElement("div");
+        main.className = "upload-main";
+        const titleRow = document.createElement("div");
+        titleRow.className = "upload-title-row";
+        const name = document.createElement("div");
+        name.className = "upload-name";
+        name.textContent = item.name;
+        name.title = item.name;
+        const badge = document.createElement("span");
+        badge.className = `badge ${item.status}`;
+        badge.textContent = text(item.status);
+        titleRow.append(name, badge);
+        const detail = document.createElement("div");
+        detail.className = "upload-detail";
+        detail.textContent = `${text("checked")} · ${item.time} · ${formatSize(item.size)}`;
+        const result = document.createElement("div");
+        result.className = "upload-result";
+        result.textContent = text(item.message);
+        main.append(titleRow, detail, result);
+        row.append(preview, main);
+        list.append(row);
+      });
+    }
+    function formatSize(bytes) {
+      return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    function persistHashes() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...knownHashes]));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function loadHashes() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (!Array.isArray(parsed) || parsed.length > MAX_HASHES || parsed.some(hash => typeof hash !== "string" || !/^[a-f0-9]{64}$/.test(hash))) {
+          throw new Error("Invalid duplicate history");
+        }
+        parsed.forEach(hash => knownHashes.add(hash));
+      } catch {
+        historyValid = false;
+        setFeedback("uploadFeedback", text("storageCorrupt"), "error");
+        $("checkUpload").disabled = true;
+        return false;
+      }
+      updateCounts();
+      return true;
+    }
+    function setLanguage(next) {
+      lang = next;
+      document.documentElement.lang = next;
+      document.querySelectorAll("[data-i]").forEach(node => { node.textContent = text(node.dataset.i); });
+      $("language").textContent = next === "en" ? "日本語" : "English";
+      $("language").setAttribute("aria-label", next === "en" ? "日本語に切り替え" : "Switch to English");
+      renderUploads();
+    }
+    $("language").addEventListener("click", () => setLanguage(lang === "en" ? "ja" : "en"));
+
+    $("adultConsent").addEventListener("change", () => {
+      $("checkUpload").disabled = !$("adultConsent").checked || processing || !historyValid;
+    });
+    $("videoFile").addEventListener("change", () => {
+      const file = $("videoFile").files[0];
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        $("videoFile").value = "";
+        $("dropTitle").textContent = text("dropTitle");
+        $("dropHint").textContent = text("dropHint");
+        setFeedback("uploadFeedback", text("fileTooLarge"), "error");
+        return;
+      }
+      $("dropTitle").textContent = file.name;
+      $("dropHint").textContent = formatSize(file.size);
+      setFeedback("uploadFeedback", "");
+    });
+    const dropzone = $("dropzone");
+    ["dragenter", "dragover"].forEach(name => dropzone.addEventListener(name, event => {
+      event.preventDefault();
+      dropzone.classList.add("dragover");
+    }));
+    ["dragleave", "drop"].forEach(name => dropzone.addEventListener(name, event => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+    }));
+    dropzone.addEventListener("drop", event => {
+      const file = event.dataTransfer.files[0];
+      if (!file) return;
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      $("videoFile").files = transfer.files;
+      $("videoFile").dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    async function sha256(file, onProgress) {
+      if (!crypto.subtle) throw new Error("Secure browser cryptography is unavailable. Open this file in a current browser.");
+      onProgress(10);
+      const buffer = await file.arrayBuffer();
+      onProgress(65);
+      const digest = await crypto.subtle.digest("SHA-256", buffer);
+      onProgress(100);
+      return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+    async function runCheck() {
+      const file = $("videoFile").files[0];
+      if (!historyValid) {
+        setFeedback("uploadFeedback", text("storageCorrupt"), "error");
+        return;
+      }
+      if (!file) {
+        setFeedback("uploadFeedback", text("chooseVideo"), "warn");
+        return;
+      }
+      if (!$("adultConsent").checked) {
+        setFeedback("uploadFeedback", text("consentRequired"), "warn");
+        return;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        setFeedback("uploadFeedback", text("fileTooLarge"), "error");
+        return;
+      }
+
+      processing = true;
+      $("checkUpload").disabled = true;
+      $("progressWrap").hidden = false;
+      $("progress").value = 0;
+      $("progressText").textContent = text("processing");
+      setFeedback("uploadFeedback", "");
+      let objectUrl = "";
+      try {
+        const hash = await sha256(file, value => {
+          $("progress").value = value;
+          $("progressText").textContent = `${text("processingLabel")} · ${Math.round(value)}%`;
+        });
+        $("progressText").textContent = text("checking");
+        let status, message;
+        if (knownHashes.has(hash)) {
+          status = "blocked";
+          message = "exactBlocked";
+        } else {
+          if (knownHashes.size >= MAX_HASHES) throw new Error(text("historyFull"));
+          knownHashes.add(hash);
+          if (!persistHashes()) {
+            knownHashes.delete(hash);
+            throw new Error(text("storageUnavailable"));
+          }
+          status = "live";
+          message = "published";
+          objectUrl = URL.createObjectURL(file);
+        }
+        uploads.unshift({
+          name: file.name,
+          size: file.size,
+          status,
+          message,
+          time: new Date().toLocaleTimeString(),
+          url: objectUrl,
+        });
+        setFeedback("uploadFeedback", text(message), status === "blocked" ? "error" : "ok");
+        renderUploads();
+        $("videoFile").value = "";
+        $("dropTitle").textContent = text("dropTitle");
+        $("dropHint").textContent = text("dropHint");
+      } catch (error) {
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        setFeedback("uploadFeedback", error instanceof Error ? error.message : text("videoError"), "error");
+      } finally {
+        processing = false;
+        $("checkUpload").disabled = !$("adultConsent").checked || !historyValid;
+        $("progressWrap").hidden = true;
+      }
+    }
+    $("checkUpload").addEventListener("click", runCheck);
+    $("clearUploads").addEventListener("click", () => {
+      uploads.forEach(item => { if (item.url) URL.revokeObjectURL(item.url); });
+      uploads.splice(0, uploads.length);
+      const previousHashes = [...knownHashes];
+      knownHashes.clear();
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        previousHashes.forEach(hash => knownHashes.add(hash));
+        setFeedback("uploadFeedback", text("storageUnavailable"), "error");
+        updateCounts();
+        return;
+      }
+      historyValid = true;
+      $("checkUpload").disabled = !$("adultConsent").checked;
+      $("videoFile").value = "";
+      $("dropTitle").textContent = text("dropTitle");
+      $("dropHint").textContent = text("dropHint");
+      setFeedback("uploadFeedback", "");
+      renderUploads();
+    });
+    window.addEventListener("beforeunload", () => {
+      uploads.forEach(item => { if (item.url) URL.revokeObjectURL(item.url); });
+    });
+
+    loadHashes();
+    renderUploads();
+    setLanguage("en");
+  </script>
+</body>
+</html>

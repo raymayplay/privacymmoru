@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mamoru 守る — Private Video Safety Assistant</title>
+<meta name="description" content="Private on-device video fingerprint tools, local AI guidance, and practical support resources.">
+<style>
+:root{--bg:#f3f6f4;--fg:#14211c;--mute:#55655e;--card:#fff;--line:#cdd9d3;--ac:#0f6b57;--acfg:#fff;--warn:#9a3412;--ok:#0f6b57;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181a;--fg:#e6efeb;--mute:#9bb0a7;--card:#18242a;--line:#2b3b40;--ac:#4cc3a5;--acfg:#06241c;--warn:#fdba74;--ok:#4cc3a5}}
+:root[data-theme="dark"]{--bg:#10181a;--fg:#e6efeb;--mute:#9bb0a7;--card:#18242a;--line:#2b3b40;--ac:#4cc3a5;--acfg:#06241c;--warn:#fdba74;--ok:#4cc3a5}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,system-ui,sans-serif;line-height:1.7}
+main{max-width:760px;margin:0 auto;padding:22px 16px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+h1{font-size:1.5rem;line-height:1.35;margin:0 0 6px}
+h2{font-size:1.1rem;margin:0 0 8px}
+.lang{display:flex;gap:4px}
+.lang button{padding:6px 10px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:6px;font:inherit;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+.lead{color:var(--mute);margin:0 0 16px}
+.promise{border-left:4px solid var(--ac);padding:2px 0 2px 12px;margin:0 0 18px;font-weight:600}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{flex:1 1 120px;padding:10px 8px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ac);color:var(--acfg);border-color:var(--ac)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+.panel[hidden]{display:none}
+label.file{display:block;border:2px dashed var(--line);border-radius:10px;padding:22px 12px;text-align:center;cursor:pointer;margin:8px 0}
+label.file:hover{border-color:var(--ac)}
+input[type=file]{display:none}
+textarea{width:100%;min-height:70px;font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0}
+.btn{padding:9px 14px;border:0;background:var(--ac);color:var(--acfg);border-radius:8px;font:inherit;font-weight:600;cursor:pointer;margin:4px 6px 4px 0}
+.btn.alt{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.res{padding:10px 12px;border-radius:8px;border:1px solid var(--line);margin-top:10px;font-weight:600}
+.res.ok{color:var(--ok)}.res.ng{color:var(--warn)}
+.post{border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px}
+.post video{width:100%;max-height:200px;border-radius:6px;background:#000}
+.post .gone{padding:22px 10px;text-align:center;color:var(--warn);font-weight:600;background:var(--bg);border-radius:6px}
+.log{font:12px/1.6 ui-monospace,Menlo,monospace;color:var(--mute);max-height:150px;overflow:auto;margin-top:10px}
+.mute{color:var(--mute);font-size:.88rem}
+ol,ul{padding-left:20px;margin:6px 0}
+.sw{display:flex;align-items:center;gap:10px;margin:8px 0;font-weight:600}
+.sw input{width:20px;height:20px}
+code{font:12px ui-monospace,Menlo,monospace;word-break:break-all}
+progress{width:100%}
+</style>
+<style>
+:root:not([data-fx]){--bg:#050b14;--fg:#e8f4ff;--mute:#8aa3b8;--card:rgba(12,24,40,.72);--line:rgba(80,200,255,.24);--ac:#22d3ee;--acfg:#00131a;--warn:#ff6b4a;--ok:#34f5c5;--glow:0 0 26px rgba(34,211,238,.28);--grid:rgba(80,200,255,.07);--term:#02070d}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e9f3fa;--fg:#0b2233;--mute:#4a6579;--card:rgba(255,255,255,.82);--line:rgba(8,110,160,.3);--ac:#0891b2;--acfg:#fff;--warn:#c2410c;--ok:#047857;--glow:0 0 18px rgba(8,145,178,.18);--grid:rgba(8,110,160,.08);--term:#0b2233}}
+body{font-family:"Space Grotesk","Noto Sans JP","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;background:radial-gradient(900px 500px at 85% -10%,rgba(34,211,238,.16),transparent 60%),radial-gradient(700px 500px at -10% 30%,rgba(225,29,72,.10),transparent 60%),var(--bg);background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(#000,transparent 85%);-webkit-mask-image:linear-gradient(#000,transparent 85%)}
+main{position:relative}
+.hero{display:flex;align-items:center;gap:16px;position:relative}
+.hero h1{font-size:clamp(1.15rem,3.6vw,1.6rem);letter-spacing:.01em;text-shadow:0 0 18px rgba(34,211,238,.35)}
+.hero .kanji{position:absolute;right:-6px;top:-18px;font-size:6.5rem;font-weight:700;color:var(--ac);opacity:.07;pointer-events:none;line-height:1}
+.orb{width:84px;height:84px;flex:none;overflow:visible;filter:drop-shadow(0 0 8px rgba(34,211,238,.55))}
+.orb circle,.orb path,.orb line{fill:none;stroke:var(--ac);stroke-width:1.6;stroke-linecap:round}
+.orb .r1{stroke-dasharray:3 6;transform-origin:60px 60px;animation:spin 18s linear infinite}
+.orb .r2{opacity:.5}
+.orb .scan{stroke:var(--ok);animation:sweep 2.6s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes sweep{0%,100%{transform:translateY(0);opacity:0}15%,85%{opacity:1}50%{transform:translateY(60px)}}
+.lang button{background:var(--card);border-radius:99px;backdrop-filter:blur(8px)}
+.lang button[aria-pressed="true"]{box-shadow:var(--glow)}
+.promise{position:relative;border:1px solid var(--line);border-left:3px solid var(--ac);background:var(--card);border-radius:10px;padding:10px 14px 10px 40px;backdrop-filter:blur(8px)}
+.promise::before{content:"⬢";position:absolute;left:13px;top:9px;color:var(--ok);text-shadow:0 0 10px var(--ok)}
+.tabs{gap:8px}
+.tabs button{border-radius:99px;background:var(--card);backdrop-filter:blur(8px);transition:box-shadow .2s,transform .15s,border-color .2s}
+.tabs button:hover{border-color:var(--ac);transform:translateY(-1px)}
+.tabs button[aria-selected="true"]{background:linear-gradient(135deg,var(--ac),#38f0c0);box-shadow:var(--glow)}
+#t1::before{content:"◈  "}#t2::before{content:"◎  "}#t3::before{content:"✦  "}
+.panel{position:relative;background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;box-shadow:var(--glow),inset 0 1px 0 rgba(255,255,255,.06)}
+.panel::before,.panel::after{content:"";position:absolute;width:16px;height:16px;border:2px solid var(--ac);pointer-events:none;opacity:.8}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0;border-radius:0 0 14px 0}
+.panel:not([hidden]){animation:rise .35s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+h2{display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:4px;height:1.1em;border-radius:2px;background:linear-gradient(var(--ac),var(--ok));box-shadow:0 0 10px var(--ac)}
+label.file{position:relative;overflow:hidden;background:linear-gradient(180deg,rgba(34,211,238,.07),transparent);border:1.5px dashed var(--ac);border-radius:12px;padding:28px 12px;transition:box-shadow .2s,background .2s}
+label.file::before{content:"⇪";display:block;font-size:1.7rem;color:var(--ac);text-shadow:0 0 12px var(--ac);margin-bottom:2px}
+label.file:hover{box-shadow:var(--glow),inset 0 0 30px rgba(34,211,238,.1)}
+label.file:has(+ #busy1:not([hidden]))::after{content:"";position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--ok),transparent);box-shadow:0 0 14px var(--ok);animation:dl 1.1s linear infinite}
+@keyframes dl{from{top:0}to{top:100%}}
+progress{height:6px;border:0;border-radius:9px;overflow:hidden;background:var(--line);margin-top:8px}
+progress::-webkit-progress-bar{background:var(--line)}progress::-webkit-progress-value{background:linear-gradient(90deg,var(--ac),var(--ok));box-shadow:0 0 10px var(--ac)}progress::-moz-progress-bar{background:var(--ac)}
+textarea{background:var(--term);color:var(--ok);border:1px solid var(--line);border-radius:10px;box-shadow:inset 0 0 18px rgba(0,0,0,.35)}
+#saved{color:var(--ok)}
+.btn{background:linear-gradient(135deg,var(--ac),#38f0c0);border-radius:99px;padding:10px 18px;transition:box-shadow .2s,transform .15s}
+.btn:hover{box-shadow:var(--glow);transform:translateY(-1px)}.btn:active{transform:translateY(1px)}
+.btn.alt{background:transparent;border:1px solid var(--ac);color:var(--ac)}
+.sw{padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(34,211,238,.05)}
+.sw input{appearance:none;-webkit-appearance:none;width:48px;height:26px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;transition:background .2s,box-shadow .2s;flex:none}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--fg);transition:transform .2s,background .2s}
+.sw input:checked{background:var(--ac);box-shadow:var(--glow)}.sw input:checked::after{transform:translateX(22px);background:var(--acfg)}
+#regmsg .res.ok{display:flex;align-items:center;gap:12px;border-color:var(--ok)}
+#regmsg .res.ok::before{content:"守";flex:none;display:grid;place-items:center;width:44px;height:44px;border:2px solid #e11d48;border-radius:50%;color:#e11d48;font-weight:700;font-size:1.3rem;transform:rotate(-8deg);animation:stamp .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes stamp{from{transform:scale(2.6) rotate(-8deg);opacity:0}}
+.res{border-radius:10px;backdrop-filter:blur(6px)}
+#guide h2{margin-top:16px}
+#guide li{margin:4px 0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media (max-width:480px){.orb{width:64px;height:64px}.hero .kanji{font-size:4.5rem}}
+.support{border-color:rgba(52,245,197,.38);background:linear-gradient(145deg,rgba(10,35,43,.88),var(--card))}
+.support .intro{max-width:62ch;color:var(--mute);margin:0 0 14px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0}
+.choice{min-height:46px;border:1px solid var(--line);border-radius:10px;background:rgba(34,211,238,.05);color:var(--fg);padding:10px;text-align:left;font:inherit;font-weight:600;cursor:pointer}
+.choice:hover,.choice[aria-pressed="true"]{border-color:var(--ac);box-shadow:var(--glow)}
+.choice[aria-pressed="true"]{background:rgba(34,211,238,.14)}
+.guide-result{border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(0,0,0,.16);margin-top:12px}
+.guide-result h3{margin:0 0 8px;font-size:1rem}
+.guide-result li{margin:6px 0}
+.guide-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.guide-links a{color:var(--ac);font-weight:700;text-underline-offset:3px}
+.saved-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding:6px 0}
+.safe-note strong{margin-right:.3em}
+.safe-note{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.025);color:var(--mute);font-size:.88rem}
+.consent{align-items:flex-start;font-size:.88rem;font-weight:500}
+.consent input{margin-top:2px}
+.small{font-size:.78rem;color:var(--mute)}
+.btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.4)}
+.assistant-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.assistant-grid label{display:grid;gap:4px;color:var(--mute);font-size:.82rem;font-weight:600}
+.assistant-grid input,.assistant-question{width:100%;border:1px solid var(--line);border-radius:9px;background:var(--term);color:var(--fg);font:inherit;padding:9px 11px}
+.assistant-question{min-height:84px;margin:8px 0}
+.assistant-status{min-height:1.5em;margin:8px 0;color:var(--mute);font-size:.86rem}
+.assistant-status.error{color:var(--warn)}
+.assistant-status.ok{color:var(--ok)}
+.assistant-answer{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.16);padding:12px;margin-top:10px}
+.assistant-answer:empty{display:none}
+@media(max-width:480px){.assistant-grid{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="hero"><svg class="orb" viewBox="0 0 120 120" aria-hidden="true"><circle class="r1" cx="60" cy="60" r="56"/><circle class="r2" cx="60" cy="60" r="46"/><path d="M38 72c0-15 10-26 22-26s22 11 22 26"/><path d="M46 76c0-11 6-19 14-19s14 8 14 19"/><path d="M54 80c0-6 3-10 6-10s6 4 6 10"/><path d="M60 84v-6"/><line class="scan" x1="20" x2="100" y1="30" y2="30"/></svg><h1 data-i="title"></h1><span class="kanji" aria-hidden="true">守</span></div>
+<div class="lang"><button id="bEn" aria-pressed="true">English</button><button id="bJa" aria-pressed="false">日本語</button></div>
+</header>
+<p class="lead" data-i="lead"></p>
+<p class="promise" data-i="promise"></p>
+<div class="safe-note" role="note">
+  <strong data-i="scopeTitle"></strong>
+  <span data-i="scopeText"></span>
+</div>
+<section class="panel support" aria-labelledby="quickHelpTitle">
+  <h2 id="quickHelpTitle" data-i="quickHelpTitle"></h2>
+  <p class="intro" data-i="quickHelpIntro"></p>
+  <button class="btn" id="quickHelp" type="button" aria-controls="p3" data-i="quickHelpButton"></button>
+</section>
+
+<div class="tabs" role="tablist">
+<button role="tab" id="t1" aria-selected="true" data-i="tab1"></button>
+<button role="tab" id="t2" aria-selected="false" data-i="tab2"></button>
+<button role="tab" id="t3" aria-selected="false" data-i="tab3"></button>
+</div>
+
+<section class="panel" id="p1">
+<h2 data-i="h1"></h2>
+<label class="sw consent"><input type="checkbox" id="consent"><span data-i="consent"></span></label>
+<p class="small" data-i="minorWarning"></p>
+<label class="file"><input type="file" id="f1" accept="video/*" disabled><span data-i="pick"></span></label>
+<div id="busy1" hidden><span data-i="working"></span><progress id="pg1" max="100" value="0"></progress></div>
+<div id="out1" hidden>
+<p class="mute" data-i="hashNote"></p>
+<textarea id="json1" readonly></textarea>
+<button class="btn" id="reg" data-i="register"></button>
+<button class="btn alt" id="copy" data-i="copy"></button>
+<div id="regmsg"></div>
+</div>
+<p class="small" data-i="registryLocal"></p>
+<h2 style="margin-top:18px" data-i="regTitle"></h2>
+<div id="regList" class="mute"></div>
+</section>
+
+<section class="panel" id="p2" hidden>
+<h2 data-i="h3"></h2>
+<p class="mute" data-i="checkIntro"></p>
+<p class="small" data-i="compareCaution"></p>
+<textarea id="saved" placeholder='{"sha256":"…","frames":["…"]}'></textarea>
+<label class="file"><input type="file" id="f3" accept="video/*" disabled><span data-i="found"></span></label>
+<div id="res3"></div>
+</section>
+
+<section class="panel" id="p3" hidden>
+<h2 data-i="h4"></h2>
+<p class="intro" data-i="guideIntro"></p>
+<div class="safe-note" data-i="urgentNote"></div>
+<h3 data-i="situationQuestion"></h3>
+<div class="choices" role="group" aria-label="Choose your situation">
+  <button class="choice" type="button" data-situation="leaked" aria-pressed="false" data-i="situationLeaked"></button>
+  <button class="choice" type="button" data-situation="helping" aria-pressed="false" data-i="situationHelping"></button>
+  <button class="choice" type="button" data-situation="checking" aria-pressed="false" data-i="situationChecking"></button>
+  <button class="choice" type="button" data-situation="general" aria-pressed="false" data-i="situationGeneral"></button>
+</div>
+<h3 data-i="ageQuestion"></h3>
+<div class="choices" role="group" aria-label="Age at the time of recording">
+  <button class="choice" type="button" data-age="adult" aria-pressed="false" data-i="ageAdult"></button>
+  <button class="choice" type="button" data-age="minor" aria-pressed="false" data-i="ageMinor"></button>
+  <button class="choice" type="button" data-age="unsure" aria-pressed="false" data-i="ageUnsure"></button>
+</div>
+<div id="guideResult" class="guide-result" aria-live="polite" hidden></div>
+<p class="small" data-i="guidePrivacy"></p>
+<div class="assistant" aria-labelledby="assistantTitle">
+  <h2 id="assistantTitle" data-i="assistantTitle"></h2>
+  <p class="mute" data-i="assistantIntro"></p>
+  <div class="safe-note" data-i="assistantPrivacy"></div>
+  <div class="assistant-grid">
+    <label><span data-i="ollamaAddress"></span><input id="ollamaAddress" type="url" value="http://127.0.0.1:11434" autocomplete="url"></label>
+    <label><span data-i="ollamaModel"></span><input id="ollamaModel" type="text" value="qwen2.5:3b" autocomplete="off"></label>
+  </div>
+  <button class="btn alt" id="checkOllama" type="button" data-i="checkOllama"></button>
+  <div id="assistantStatus" class="assistant-status" role="status" aria-live="polite"></div>
+  <label for="assistantQuestion" data-i="assistantQuestionLabel"></label>
+  <textarea id="assistantQuestion" class="assistant-question" maxlength="1200"></textarea>
+  <button class="btn" id="askAssistant" type="button" data-i="askAssistant"></button>
+  <div id="assistantAnswer" class="assistant-answer" aria-live="polite"></div>
+</div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const L={
+en:{
+title:"Mamoru 守る — private tools and practical next steps",
+lead:"Private, on-device tools and practical support when you are unsure what to do.",
+promise:"Videos stay in this browser. This app does not upload, report, remove, or block content on real websites.",
+scopeTitle:"Important limits: ",
+scopeText:"This is a local prototype, not a partner network, legal service, or emergency service. Hashes can still be sensitive; do not share them publicly.",
+quickHelpTitle:"Need help deciding what to do next?",
+quickHelpIntro:"Get a private checklist tailored to your situation. No name, account, video, or URL is requested or saved.",
+quickHelpButton:"Get my next steps",
+tab1:"1. Protect",tab2:"2. Compare",tab3:"Get help",
+h1:"Create a local video fingerprint",pick:"Choose an adult-consensual video (processed on this device)",working:"Processing locally…",
+consent:"I am an adult. The video is mine to protect or I have permission from every adult depicted. No one in it was under 18 when recorded.",
+minorWarning:"Never select, hash, upload, download, or share sexual content involving anyone under 18. Use the help guide instead.",
+hashNote:"Local fingerprint only. Nothing is sent anywhere:",register:"Save fingerprint on this device",copy:"Copy fingerprint",
+regTitle:"Saved fingerprints (this browser only)",regEmpty:"Nothing saved on this device.",registered:"Fingerprint saved in this browser. No platform was contacted.",
+registryLocal:"Saved fingerprints persist in this browser's local storage. Anyone using this browser profile may access them. Clear them from the browser or remove them below.",
+remove:"Remove",removedLocal:"Fingerprint removed from this browser.",storageError:"Browser storage is unavailable. The fingerprint was not saved.",registryFull:"The local list is full. Remove a saved fingerprint before adding another.",
+h3:"Compare a found video on this device",checkIntro:"Paste a fingerprint created with this tool, then choose a video to compare locally.",found:"Choose video to compare",
+compareCaution:"A matching SHA-256 means the files are byte-for-byte identical. A visual fingerprint is only a rough similarity signal—not proof of identity, consent, or wrongdoing. Never make an accusation or request removal based only on this score.",
+same:"Exact file match (same SHA-256).",likely:"Visual similarity only — manually review; not a confirmed match.",notsame:"No strong visual match detected.",sim:"visual similarity",needHash:"Paste a valid fingerprint JSON first.",
+h4:"Private next-step guide",guideIntro:"Choose the situation and age context. This guide runs in your browser, does not ask for names or links, and does not save your answers.",
+urgentNote:"If anyone is in immediate danger, contact local emergency services. In Japan, call 110 for urgent police help.",
+situationQuestion:"What would help right now?",situationLeaked:"My intimate video/image was shared",situationHelping:"I’m supporting someone",situationChecking:"I found a possible copy",situationGeneral:"I’m looking for information",
+ageQuestion:"Was anyone in the content under 18 when it was recorded?",ageAdult:"Everyone was 18+",ageMinor:"Yes, someone was under 18",ageUnsure:"I’m not sure",
+chooseBoth:"Choose a situation and age context to get a tailored checklist.",minorTitle:"Do not use the hash tools for this content",
+minor1:"Do not upload, download, forward, hash, or repost the content. Do not send it to this app or to friends.",minor2:"If there is immediate danger, call 110 in Japan or your local emergency number. For police advice in Japan, call #9110.",minor3:"Contact a trusted adult and the police. In Japan, sexual violence support is available through #8891. Use official services for the current guidance.",
+adultTitle:"A practical, low-risk action plan",adult1:"Record the page URL, account name, post ID, and date/time. If safe, capture only the surrounding page without copying the intimate image. Follow platform or police guidance about evidence.",adult2:"Report the post through the platform’s official non-consensual intimate imagery/privacy reporting flow. Keep the report/reference number.",adult3:"If you are an adult depicted in the content, visit StopNCII.org to check eligibility and use their official process. This app does not send your fingerprint to StopNCII.",adult4:"Consider asking a trusted person or support service to stay with you while reporting. Avoid paying, threatening, or engaging with the person sharing it.",adult5:"For Japan: #9110 is police consultation; #8891 connects to sexual violence support. Call 110 for urgent danger.",
+helperTitle:"Support without taking control",helper1:"Ask what the person wants and let them choose the next step. Do not ask them to send you the video.",helper2:"Offer to sit with them while they use the platform’s official report form or contact a support service.",helper3:"If the content was made when anyone was under 18, do not download, forward, or hash it. Help them contact a trusted adult and police; call emergency services if there is immediate danger.",helper4:"Keep notes to URLs, usernames, dates, and report numbers—not copies of the intimate content.",
+checkingTitle:"A fingerprint is a clue, not a verdict",checking1:"An exact SHA-256 match means the file bytes are identical. Re-encoding or editing can change it.",checking2:"Visual similarity is approximate and can produce false positives or miss altered copies. It does not establish who is depicted or whether sharing was consensual.",checking3:"Do not accuse someone or request a takedown based only on this result. Use the platform's report process and seek human support.",
+guidePrivacy:"Your choices stay in this page and are not saved.",
+supportLinks:"Support and official resources",phonePolice:"Police consultation #9110",phoneSupport:"Sexual violence support #8891",emergency:"Emergency police 110",stopNcii:"StopNCII.org (check eligibility)",ihaho:"Japan Illegal/Harmful Information Consultation Center",
+assistantTitle:"Local AI helper",assistantIntro:"Ask a question in plain language if you feel unsure. The helper uses Ollama on this device; no API key is needed. The fixed guide above still works if Ollama is unavailable.",assistantPrivacy:"Your question is sent only to the local Ollama service and is not saved by this page. Do not include names, account details, links, or video content. AI can make mistakes and is not an emergency or legal service. Use the official support options above for urgent or sensitive decisions.",assistantSafetyMode:"Because the age is under 18 or uncertain, do not open, view, download, forward, or hash the content. Ask a trusted adult and contact appropriate local support or authorities. If anyone is in immediate danger, call emergency services (110 in Japan).",assistantSafetyNotice:"Fixed safety guidance shown; the model was not contacted.",
+ollamaAddress:"Local Ollama address",ollamaModel:"Installed model name",checkOllama:"Check local model",assistantQuestionLabel:"What are you unsure about?",assistantQuestionPlaceholder:"For example: I found a possible copy. What is a safe first step?",askAssistant:"Ask local helper",assistantCheckReady:"Ollama is ready with this model.",assistantModelMissing:"Ollama is running, but that model is not installed. Available models: ",assistantUnavailable:"Could not reach Ollama. Start Ollama and check its local address/model. If this page is opened as a file and the browser blocks the local request, run the page from localhost or configure Ollama browser origins.",assistantChecking:"Checking local Ollama…",assistantEmpty:"Type a question first.",assistantThinking:"Asking the local model…",assistantError:"The local model request failed: ",assistantNoReply:"The model returned an empty reply.",assistantModelNeeded:"Enter an installed Ollama model name.",assistantLimit:"Keep your question under 1,200 characters.",assistantAddressInvalid:"Enter a valid localhost Ollama address.",assistantAddressLocalOnly:"For privacy, Ollama must be on this device (localhost).",assistantTimeout:"Ollama took too long to respond.",
+copySteps:"Copy action checklist",copied:"Checklist copied.",copyFailed:"Could not copy. Select and copy the checklist manually.",noStorage:"This browser does not support local storage.",sizeError:"Please choose a video smaller than 100 MB.",videoError:"Could not process this video. Try a supported MP4/WebM file in a current browser.",
+},
+ja:{
+title:"守る — プライバシーを守り、次の行動を案内",
+lead:"プライバシーを守る端末内ツールと、次の行動に迷ったときのサポート。",
+promise:"動画はこのブラウザー内で処理されます。このアプリは実際のサイトにアップロード・通報・削除・ブロックをしません。",
+scopeTitle:"重要な制限：",
+scopeText:"これはローカルの試作品で、提携ネットワーク・法律相談・緊急窓口ではありません。ハッシュも機微な情報になり得ます。公開しないでください。",
+quickHelpTitle:"次に何をすればよいか迷っていますか？",
+quickHelpIntro:"状況に合わせたプライベートな確認リストを表示します。氏名・アカウント・動画・URLは聞かず、保存しません。",
+quickHelpButton:"次の行動を確認",
+tab1:"1. 保護",tab2:"2. 照合",tab3:"相談ガイド",
+h1:"端末内で動画指紋を作成",pick:"成人の同意がある動画を選択（この端末内で処理）",working:"端末内で処理中…",
+consent:"私は成人です。動画は自分を守るためのもの、または映っているすべての成人から処理の許可を得ています。撮影時に18歳未満の人はいません。",
+minorWarning:"18歳未満の人が関係する性的コンテンツを選択・ハッシュ化・アップロード・ダウンロード・共有しないでください。相談ガイドを利用してください。",
+hashNote:"端末内の指紋のみ。外部には送信されません：",register:"この端末に指紋を保存",copy:"指紋をコピー",
+regTitle:"保存した指紋（このブラウザーのみ）",regEmpty:"この端末に保存はありません。",registered:"このブラウザーに保存しました。外部サイトには連絡していません。",
+registryLocal:"指紋はこのブラウザーのローカルストレージに保存されます。同じブラウザープロファイルを使う人が閲覧できます。ブラウザー設定または下の削除ボタンから消してください。",
+remove:"削除",removedLocal:"このブラウザーから指紋を削除しました。",storageError:"ブラウザーの保存領域を使えません。指紋は保存されていません。",registryFull:"保存リストがいっぱいです。新しく保存する前に、指紋を削除してください。",
+h3:"見つけた動画を端末内で照合",checkIntro:"このツールで作成した指紋を貼り付け、比較する動画を選んでください。照合は端末内で行います。",found:"照合する動画を選択",
+compareCaution:"SHA-256の完全一致はファイルがバイト単位で同一という意味です。見た目の指紋は大まかな類似度の目安で、同一性・同意・違法性の証明ではありません。この数値だけで非難や削除依頼をしないでください。",
+same:"ファイルが完全一致（同じSHA-256）です。",likely:"見た目の類似のみ — 人が確認してください。一致確定ではありません。",notsame:"強い視覚的一致は見つかりません。",sim:"視覚的類似度",needHash:"有効な指紋JSONを先に貼り付けてください。",
+h4:"プライベート相談ガイド",guideIntro:"状況と年齢を選ぶと、このブラウザー内で確認リストを表示します。名前やURLは聞かず、回答も保存しません。",
+urgentNote:"差し迫った危険がある場合は、地域の緊急窓口へ。日本で警察への緊急通報は110です。",
+situationQuestion:"今、どのようなサポートが必要ですか？",situationLeaked:"自分の親密な動画・画像が共有された",situationHelping:"誰かをサポートしている",situationChecking:"同じ動画かもしれないものを見つけた",situationGeneral:"情報を探している",
+ageQuestion:"撮影時、映っている人に18歳未満の人はいましたか？",ageAdult:"全員18歳以上",ageMinor:"18歳未満の人がいた",ageUnsure:"わからない",
+chooseBoth:"状況と撮影時の年齢を選ぶと、確認リストが表示されます。",minorTitle:"このコンテンツにハッシュ機能を使わないでください",
+minor1:"コンテンツをアップロード、ダウンロード、転送、ハッシュ化、再投稿しないでください。このアプリや友人にも送らないでください。",minor2:"差し迫った危険は110（日本）または地域の緊急番号へ。日本で警察への相談は#9110です。",minor3:"信頼できる大人と警察に相談してください。日本の性暴力被害相談は#8891です。最新の案内は公式窓口で確認してください。",
+adultTitle:"安全を優先する行動チェックリスト",adult1:"ページURL、アカウント名、投稿ID、日時を記録します。安全な場合も、親密な画像自体を含めず周辺ページだけを記録してください。証拠の扱いはサイトや警察の案内に従います。",adult2:"プラットフォーム公式の「同意のない親密画像／プライバシー侵害」通報窓口から報告し、受付番号を保存します。",adult3:"成人として映っている場合は、StopNCII.orgで対象条件と公式手順を確認してください。このアプリからStopNCIIへ指紋は送信されません。",adult4:"信頼できる人や相談窓口に付き添ってもらうことを検討してください。投稿者への支払い・脅迫・直接対応は避けてください。",adult5:"日本では警察相談#9110、性暴力被害相談#8891。差し迫った危険は110へ。",
+helperTitle:"本人の意思を尊重したサポート",helper1:"本人が望むことを聞き、次の行動を本人に選んでもらいます。動画を送るよう求めないでください。",helper2:"公式通報フォームや相談窓口を利用する際、そばで支えることを提案します。",helper3:"撮影時に18歳未満の人がいた場合は、ダウンロード・転送・ハッシュ化せず、信頼できる大人と警察への相談を手伝います。差し迫った危険は緊急窓口へ。",helper4:"メモはURL、ユーザー名、日時、受付番号だけにし、親密なコンテンツのコピーを保存しないでください。",
+checkingTitle:"指紋は手掛かりであり、判定ではありません",checking1:"SHA-256の完全一致はファイルの内容がバイト単位で同じという意味です。再圧縮や編集で変わります。",checking2:"視覚的類似は近似値です。誤検出や見逃しがあり、映っている人や共有の同意は判定できません。",checking3:"結果だけで人を非難したり削除依頼をしないでください。サイトの公式通報窓口や支援機関に相談してください。",
+supportLinks:"相談先と公式情報",phonePolice:"警察相談 #9110",phoneSupport:"性暴力被害相談 #8891",emergency:"警察への緊急通報 110",stopNcii:"StopNCII.org（対象条件を確認）",ihaho:"違法・有害情報相談センター",
+guidePrivacy:"選択内容はこのページ内だけで使われ、保存されません。",
+assistantTitle:"ローカルAIアシスタント",assistantIntro:"迷ったときは、普段の言葉で質問できます。この端末のOllamaを使うため、APIキーは不要です。固定ガイドはOllamaが使えない場合も利用できます。",assistantPrivacy:"質問はこの端末のOllamaにだけ送られ、このページには保存されません。氏名、アカウント情報、リンク、動画の内容は入力しないでください。AIは誤ることがあり、緊急窓口や法律相談の代わりではありません。緊急時や慎重な判断が必要な場合は、上の公式相談先を利用してください。",assistantSafetyMode:"撮影時に18歳未満の人がいた、または年齢が不明な場合、コンテンツを開く・見る・ダウンロード・転送・ハッシュ化しないでください。信頼できる大人に相談し、地域の相談窓口や関係機関に連絡してください。差し迫った危険がある場合、日本では110へ通報してください。",assistantSafetyNotice:"固定の安全ガイダンスを表示しました。AIモデルには接続していません。",
+ollamaAddress:"ローカルOllamaアドレス",ollamaModel:"インストール済みモデル名",checkOllama:"ローカルモデルを確認",assistantQuestionLabel:"何に迷っていますか？",assistantQuestionPlaceholder:"例：動画のコピーかもしれないものを見つけました。安全な最初の一歩は？",askAssistant:"ローカルAIに質問",assistantCheckReady:"Ollamaとモデルを利用できます。",assistantModelMissing:"Ollamaは起動していますが、このモデルはありません。利用可能なモデル：",assistantUnavailable:"Ollamaに接続できません。起動状態とアドレス・モデルを確認してください。ファイルとして開いたページでブラウザーがローカル通信を拒否する場合は、localhost経由で開くか、Ollamaのブラウザーオリジン設定を確認してください。",assistantChecking:"ローカルOllamaを確認中…",assistantEmpty:"質問を入力してください。",assistantThinking:"ローカルモデルに質問中…",assistantError:"ローカルモデルへの要求に失敗しました：",assistantNoReply:"モデルから回答がありません。",assistantModelNeeded:"インストール済みのOllamaモデル名を入力してください。",assistantLimit:"質問は1,200文字以内にしてください。",assistantAddressInvalid:"有効なlocalhost Ollamaアドレスを入力してください。",assistantAddressLocalOnly:"プライバシー保護のため、Ollamaはこの端末（localhost）で実行してください。",assistantTimeout:"Ollamaの応答がタイムアウトしました。",
+copySteps:"行動チェックリストをコピー",copied:"チェックリストをコピーしました。",copyFailed:"コピーできません。表示された内容を選択してコピーしてください。",noStorage:"このブラウザーはローカル保存に対応していません。",sizeError:"100MB未満の動画を選択してください。",videoError:"動画を処理できません。対応するMP4/WebMと最新のブラウザーをお試しください。",
+}};
+let lang="en";const t=k=>L[lang][k];
+const REGISTRY_KEY="mamoru.local-fingerprints.v1";
+const MAX_FILE_SIZE=100*1024*1024;
+const registry=[];
+let current=null,selectedSituation="",selectedAge="",guideCopyText="";
+function setStatus(target,message,kind="ok"){
+ const node=$(target);node.replaceChildren();
+ if(!message)return;
+ const box=document.createElement("div");box.className=`res ${kind}`;box.textContent=message;node.append(box);
+}
+function isValidHash(hash){
+ return !!hash&&hash.version===1&&(hash.sha256===null||/^[a-f0-9]{64}$/.test(hash.sha256))&&
+  Array.isArray(hash.frames)&&hash.frames.length===8&&hash.frames.every(frame=>/^[a-f0-9]{16}$/.test(frame));
+}
+function saveRegistry(){
+ try{localStorage.setItem(REGISTRY_KEY,JSON.stringify(registry));return true}
+ catch(error){setStatus("regmsg",t("storageError"),"ng");return false}
+}
+function loadRegistry(){
+ try{
+  const raw=localStorage.getItem(REGISTRY_KEY);if(!raw)return;
+  const saved=JSON.parse(raw);
+  if(!Array.isArray(saved))throw new Error("Invalid local registry");
+  saved.slice(0,100).forEach(entry=>{
+   if(entry&&typeof entry.id==="string"&&isValidHash(entry.hash))registry.push(entry);
+  });
+ }catch(error){setStatus("regmsg",t("storageError"),"ng")}
+}
+function renderReg(){
+ const root=$("regList");root.replaceChildren();
+ if(!registry.length){root.textContent=t("regEmpty");return}
+ registry.forEach(entry=>{
+  const row=document.createElement("div");row.className="saved-row";
+  const label=document.createElement("span");label.textContent=`#${entry.id} ${(entry.hash.sha256||entry.hash.frames[0]).slice(0,24)}… `;
+  const remove=document.createElement("button");remove.type="button";remove.className="btn alt";remove.dataset.removeId=entry.id;remove.textContent=t("remove");
+  row.append(label,remove);root.append(row);
+ });
+}
+/* Translation */
+function applyLang(){
+ document.documentElement.lang=lang;
+ document.querySelectorAll("[data-i]").forEach(element=>element.textContent=t(element.dataset.i));
+ $("assistantQuestion").placeholder=t("assistantQuestionPlaceholder");
+ $("assistantStatus").textContent="";
+ $("assistantStatus").className="assistant-status";
+ $("bEn").setAttribute("aria-pressed",lang==="en");$("bJa").setAttribute("aria-pressed",lang==="ja");
+ renderReg();renderGuide();
+}
+$("bEn").onclick=()=>{lang="en";applyLang()};
+$("bJa").onclick=()=>{lang="ja";applyLang()};
+const tabs=["1","2","3"];
+function selectTab(id,focus=false){
+ tabs.forEach(number=>{
+  const active=number===id;
+  $("t"+number).setAttribute("aria-selected",String(active));
+  $("t"+number).tabIndex=active?0:-1;
+  $("p"+number).hidden=!active;
+ });
+ if(focus)$("t"+id).focus();
+}
+tabs.forEach(number=>$("t"+number).onclick=()=>selectTab(number));
+$("quickHelp").addEventListener("click",()=>selectTab("3"));
+document.querySelector(".tabs").addEventListener("keydown",event=>{
+ const currentIndex=tabs.indexOf(document.activeElement.id.slice(1));
+ if(currentIndex<0)return;
+ let next=currentIndex;
+ if(event.key==="ArrowRight")next=(currentIndex+1)%tabs.length;
+ else if(event.key==="ArrowLeft")next=(currentIndex+tabs.length-1)%tabs.length;
+ else if(event.key==="Home")next=0;
+ else if(event.key==="End")next=tabs.length-1;
+ else return;
+ event.preventDefault();selectTab(tabs[next],true);
+});
+
+/* Private, browser-only support navigator */
+const planKeys={
+ leaked:{title:"adultTitle",items:["adult1","adult2","adult3","adult4","adult5"]},
+ helping:{title:"helperTitle",items:["helper1","helper2","helper3","helper4"]},
+ checking:{title:"checkingTitle",items:["checking1","checking2","checking3"]},
+ general:{title:"checkingTitle",items:["checking1","checking2","checking3"]},
+};
+function renderGuide(){
+ const result=$("guideResult");result.replaceChildren();
+ if(!selectedSituation||!selectedAge){
+  result.hidden=!selectedSituation&&!selectedAge;
+  if(!result.hidden)result.textContent=t("chooseBoth");
+  return;
+ }
+ result.hidden=false;guideCopyText="";
+ const title=document.createElement("h3"),list=document.createElement("ol");
+ const keys=selectedAge==="adult"?planKeys[selectedSituation].items:["minor1","minor2","minor3"];
+ title.textContent=selectedAge==="adult"?t(planKeys[selectedSituation].title):t("minorTitle");
+ guideCopyText=[title.textContent,...keys.map(key=>t(key)),t("phonePolice"),t("phoneSupport"),t("emergency")].join("\n");
+ keys.forEach(key=>{const item=document.createElement("li");item.textContent=t(key);list.append(item)});
+ result.append(title,list);
+ const resourceTitle=document.createElement("h3");resourceTitle.textContent=t("supportLinks");result.append(resourceTitle);
+ const links=document.createElement("div");links.className="guide-links";
+ const linkSpecs=[["phonePolice","tel:9110"],["phoneSupport","tel:8891"],["emergency","tel:110"]];
+ if(selectedAge==="adult")linkSpecs.push(["stopNcii","https://stopncii.org/"]);
+ linkSpecs.push(["ihaho","https://www.ihaho.jp/"]);
+ linkSpecs.forEach(([label,url])=>{
+  const link=document.createElement("a");link.textContent=t(label);link.href=url;
+  if(url.startsWith("https:")){link.target="_blank";link.rel="noopener noreferrer"}
+  links.append(link);
+ });
+ result.append(links);
+ const copy=document.createElement("button");copy.type="button";copy.className="btn alt";copy.textContent=t("copySteps");
+ copy.addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(guideCopyText);setStatus("guideCopyStatus",t("copied"))}
+  catch(error){setStatus("guideCopyStatus",t("copyFailed"),"ng")}
+ });
+ result.append(copy);
+ const status=document.createElement("div");status.id="guideCopyStatus";status.setAttribute("role","status");result.append(status);
+}
+document.querySelectorAll("[data-situation]").forEach(button=>button.addEventListener("click",()=>{
+ selectedSituation=button.dataset.situation;
+ document.querySelectorAll("[data-situation]").forEach(option=>option.setAttribute("aria-pressed",String(option===button)));
+ renderGuide();
+}));
+document.querySelectorAll("[data-age]").forEach(button=>button.addEventListener("click",()=>{
+ selectedAge=button.dataset.age;
+ document.querySelectorAll("[data-age]").forEach(option=>option.setAttribute("aria-pressed",String(option===button)));
+ renderGuide();
+}));
+
+/* Local Ollama helper */
+function ollamaBaseUrl(){
+ const raw=$("ollamaAddress").value.trim();
+ let endpoint;
+ try{endpoint=new URL(raw)}catch(error){throw new Error(t("assistantAddressInvalid"))}
+ if(endpoint.protocol!=="http:"||!["localhost","127.0.0.1","[::1]"].includes(endpoint.hostname)||
+    endpoint.username||endpoint.password||endpoint.pathname!=="/"||endpoint.search||endpoint.hash){
+  throw new Error(t("assistantAddressLocalOnly"))
+ }
+ return endpoint.origin;
+}
+function ollamaModelName(){
+ const model=$("ollamaModel").value.trim();
+ if(!/^[a-zA-Z0-9._:-]+$/.test(model))throw new Error(t("assistantModelNeeded"));
+ return model;
+}
+async function ollamaRequest(path,options={}){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),120000);
+ try{
+  const response=await fetch(`${ollamaBaseUrl()}${path}`,{...options,signal:controller.signal});
+  if(!response.ok)throw new Error(`Ollama returned HTTP ${response.status}.`);
+  return await response.json();
+ }catch(error){
+  if(error.name==="AbortError")throw new Error(t("assistantTimeout"));
+  throw error;
+ }finally{clearTimeout(timeout)}
+}
+async function checkLocalOllama(){
+ const status=$("assistantStatus"),button=$("checkOllama");
+ status.className="assistant-status";status.textContent=t("assistantChecking");
+ button.disabled=true;
+ try{
+  const model=ollamaModelName();
+  const data=await ollamaRequest("/api/tags");
+  if(!Array.isArray(data.models))throw new Error("Ollama returned an invalid model list.");
+  const names=data.models.map(entry=>entry.name).filter(name=>typeof name==="string");
+  const installed=names.some(name=>name===model||(name===`${model}:latest`&&!model.includes(":")));
+  status.className=`assistant-status ${installed?"ok":"error"}`;
+  status.textContent=installed?t("assistantCheckReady"):`${t("assistantModelMissing")}${names.join(", ")||"none"}`;
+ }catch(error){
+  status.className="assistant-status error";
+  if(error instanceof Error&&(error.message===t("assistantAddressInvalid")||error.message===t("assistantAddressLocalOnly"))){
+   status.textContent=error.message;
+  }else{
+   status.textContent=`${t("assistantUnavailable")} ${error instanceof Error?error.message:""}`.trim();
+  }
+ }finally{button.disabled=false}
+}
+async function askLocalOllama(){
+ const question=$("assistantQuestion").value.trim();
+ const status=$("assistantStatus"),answer=$("assistantAnswer"),button=$("askAssistant");
+ if(!question){status.className="assistant-status error";status.textContent=t("assistantEmpty");return}
+ if(question.length>1200){status.className="assistant-status error";status.textContent=t("assistantLimit");return}
+ const mentionsMinor=/(under\s*18|underage|minor|child|children|teenager|not sure.*age|age.*not sure|18歳未満|未成年|子ども|子供|年齢.*(不明|わから|分から))/i.test(question);
+ if((selectedAge&&selectedAge!=="adult")||mentionsMinor){
+  answer.textContent=t("assistantSafetyMode");
+  status.className="assistant-status ok";status.textContent=t("assistantSafetyNotice");
+  return;
+ }
+ status.className="assistant-status";status.textContent=t("assistantThinking");
+ answer.textContent="";button.disabled=true;$("checkOllama").disabled=true;
+ try{
+  const model=ollamaModelName();
+  const tags=await ollamaRequest("/api/tags");
+  if(!Array.isArray(tags.models))throw new Error("Ollama returned an invalid model list.");
+  const names=tags.models.map(entry=>entry.name).filter(name=>typeof name==="string");
+  if(!names.some(name=>name===model||(name===`${model}:latest`&&!model.includes(":")))){
+   throw new Error(`${t("assistantModelMissing")}${names.join(", ")||"none"}`);
+  }
+  const situation=selectedSituation?`Selected situation: ${selectedSituation}.`:"No situation selected.";
+  const age=selectedAge?`Age context: ${selectedAge}.`:"Age context not selected.";
+  const system=`You are Mamoru's calm, practical local safety guide. Respond in ${lang==="ja"?"Japanese":"English"} in plain, concise language. Give 2-5 safe, actionable steps and acknowledge uncertainty. Never ask for names, account identifiers, URLs, images, videos, or other identifying details. Never ask the user to upload, download, forward, hash, or share intimate content. If the user says anyone was under 18 when recorded, clearly tell them not to view, copy, download, share, or hash the content; suggest a trusted adult and appropriate local authorities/support. If danger is immediate, advise contacting local emergency services (110 in Japan). Do not claim to verify identity, consent, legality, or whether content is authentic. Do not promise removal or platform blocking. You are not an emergency, legal, or mental-health service; direct urgent/sensitive cases to official support. The app's fixed guidance takes priority over speculation. ${situation} ${age}`;
+  const data=await ollamaRequest("/api/chat",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({model,stream:false,messages:[{role:"system",content:system},{role:"user",content:question}],options:{temperature:0.2,num_predict:400}})
+  });
+  const reply=data?.message?.content?.trim();
+  if(!reply)throw new Error(t("assistantNoReply"));
+  answer.textContent=reply;
+  status.className="assistant-status ok";status.textContent=t("assistantCheckReady");
+ }catch(error){
+  status.className="assistant-status error";
+  status.textContent=`${t("assistantError")} ${error instanceof Error?error.message:t("assistantUnavailable")}`;
+ }finally{button.disabled=false;$("checkOllama").disabled=false}
+}
+$("checkOllama").addEventListener("click",checkLocalOllama);
+$("askAssistant").addEventListener("click",askLocalOllama);
+$("assistantQuestion").addEventListener("keydown",event=>{
+ if(event.key==="Enter"&&(event.ctrlKey||event.metaKey)){event.preventDefault();askLocalOllama()}
+});
+
+/* Local video fingerprinting */
+async function sha256(file){
+ if(!crypto.subtle)throw new Error("Secure browser cryptography is unavailable. Open this file in a current browser.");
+ const digest=await crypto.subtle.digest("SHA-256",await file.arrayBuffer());
+ return[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,"0")).join("");
+}
+function seek(video,seconds){
+ return new Promise((resolve,reject)=>{
+  const timeout=setTimeout(()=>finish(new Error("Video seeking timed out")),15000);
+  const finish=error=>{
+   clearTimeout(timeout);video.removeEventListener("seeked",onSeeked);video.removeEventListener("error",onError);
+   error?reject(error):resolve();
+  };
+  const onSeeked=()=>finish();const onError=()=>finish(new Error("Video decoding failed"));
+  video.addEventListener("seeked",onSeeked,{once:true});video.addEventListener("error",onError,{once:true});
+  try{video.currentTime=seconds}catch(error){finish(error)}
+ });
+}
+async function frameHashes(file,onProgress){
+ const video=document.createElement("video"),url=URL.createObjectURL(file);
+ video.muted=true;video.preload="auto";video.playsInline=true;video.src=url;
+ try{
+  await new Promise((resolve,reject)=>{
+   const timeout=setTimeout(()=>reject(new Error("Video loading timed out")),15000);
+   video.onloadedmetadata=()=>{clearTimeout(timeout);resolve()};
+   video.onerror=()=>{clearTimeout(timeout);reject(new Error("Video decoding failed"))};
+  });
+  if(!Number.isFinite(video.duration)||video.duration<=0)throw new Error("This video has no readable duration.");
+  const canvas=document.createElement("canvas");canvas.width=9;canvas.height=8;
+  const context=canvas.getContext("2d",{willReadFrequently:true});
+  if(!context)throw new Error("Canvas processing is unavailable.");
+  const frames=[];
+  for(let index=0;index<8;index++){
+   await seek(video,video.duration*(index+.5)/8);
+   context.drawImage(video,0,0,9,8);
+   const data=context.getImageData(0,0,9,8).data;let bits="";
+   for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+    const gray=column=>{const offset=(y*9+column)*4;return .299*data[offset]+.587*data[offset+1]+.114*data[offset+2]};
+    bits+=gray(x)>gray(x+1)?"1":"0";
+   }
+   let frame="";
+   for(let offset=0;offset<64;offset+=4)frame+=parseInt(bits.slice(offset,offset+4),2).toString(16);
+   frames.push(frame);onProgress?.((index+1)*12.5);
+  }
+  return frames;
+ }finally{
+  video.removeAttribute("src");video.load();URL.revokeObjectURL(url);
+ }
+}
+async function makeHash(file,onProgress){
+ if(file.size>MAX_FILE_SIZE)throw new Error(t("sizeError"));
+ if(file.type&&!file.type.startsWith("video/"))throw new Error(t("videoError"));
+ const frames=await frameHashes(file,onProgress);
+ return{version:1,sha256:await sha256(file),frames};
+}
+function hammingDistance(left,right){
+ let total=0;
+ for(let index=0;index<left.length;index++){
+  let value=parseInt(left[index],16)^parseInt(right[index],16);
+  while(value){total+=value&1;value>>=1}
+ }
+ return total;
+}
+function compare(left,right){
+ if(!isValidHash(left)||!isValidHash(right))throw new Error(t("needHash"));
+ const exact=!!left.sha256&&!!right.sha256&&left.sha256===right.sha256;
+ const bits=left.frames.length*64;
+ const distance=left.frames.reduce((sum,frame,index)=>sum+hammingDistance(frame,right.frames[index]),0);
+ return{exact,similarity:Math.round((1-distance/bits)*100)};
+}
+/* Protection list */
+loadRegistry();
+renderReg();
+$("consent").addEventListener("change",()=>{
+ ["f1","f3"].forEach(id=>$(id).disabled=!$("consent").checked);
+});
+["f1","f3"].forEach(id=>$(id).disabled=!$("consent").checked);
+$("regList").addEventListener("click",event=>{
+ const button=event.target.closest("[data-remove-id]");if(!button)return;
+ const index=registry.findIndex(entry=>entry.id===button.dataset.removeId);
+ if(index<0)return;
+ const [removed]=registry.splice(index,1);
+ if(!saveRegistry()){registry.splice(index,0,removed);renderReg();return}
+ renderReg();setStatus("regmsg",t("removedLocal"));
+});
+$("f1").addEventListener("change",async event=>{
+ const file=event.target.files[0];if(!file)return;
+ $("busy1").hidden=false;$("out1").hidden=true;setStatus("regmsg","");
+ try{
+  current=await makeHash(file,value=>$("pg1").value=value);
+  $("json1").value=JSON.stringify(current);$("out1").hidden=false;
+ }catch(error){current=null;setStatus("regmsg",error instanceof Error?error.message:t("videoError"),"ng")}
+ finally{$("busy1").hidden=true;event.target.value=""}
+});
+$("copy").addEventListener("click",async()=>{
+ try{await navigator.clipboard.writeText($("json1").value);setStatus("regmsg",t("copied"))}
+ catch(error){$("json1").focus();$("json1").select();setStatus("regmsg",t("copyFailed"),"ng")}
+});
+$("reg").addEventListener("click",()=>{
+ if(!current||!isValidHash(current))return;
+ if(registry.some(entry=>entry.hash.sha256===current.sha256)){setStatus("regmsg",t("registered"));return}
+ if(registry.length>=100){setStatus("regmsg",t("registryFull"),"ng");return}
+ const entry={id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`,hash:current};
+ registry.push(entry);
+ if(!saveRegistry()){registry.pop();return}
+ renderReg();setStatus("regmsg",t("registered"));
+});
+
+/* Compare a file without uploading it */
+$("saved").addEventListener("input",()=>{
+ try{const hash=JSON.parse($("saved").value);if(!isValidHash(hash))throw new Error(t("needHash"));setStatus("res3","")}
+ catch(error){if($("saved").value.trim())setStatus("res3",t("needHash"),"ng")}
+});
+$("f3").addEventListener("change",async event=>{
+ const file=event.target.files[0];if(!file)return;event.target.value="";
+ try{
+  const saved=JSON.parse($("saved").value),result=compare(saved,await makeHash(file));
+  const message=result.exact?t("same"):result.similarity>=88?`${t("likely")} (${t("sim")}: ${result.similarity}%)`:`${t("notsame")} (${t("sim")}: ${result.similarity}%)`;
+  setStatus("res3",message,result.exact?"ok":result.similarity>=88?"ng":"ok");
+ }catch(error){setStatus("res3",error instanceof Error?error.message:t("needHash"),"ng")}
+});
+applyLang();
+</script>
+</body>
+</html>
